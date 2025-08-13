@@ -1,5 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { OpenAiApiService } from '../services/open-ai-api.service';
+
+type Role = 'user' | 'assistant';
+interface ChatMessage {
+  role: Role;
+  content: string;
+  isHtml?: boolean;
+}
 
 @Component({
   selector: 'app-chatbot',
@@ -7,20 +14,64 @@ import { OpenAiApiService } from '../services/open-ai-api.service';
   styleUrls: ['./chatbot.component.css']
 })
 export class ChatbotComponent {
-  userMessage!: string;
-  assistantReply!: string;
-  chatMessages: { role: string, content: string }[] = [];
+  @ViewChild('msgPane') msgPane!: ElementRef<HTMLDivElement>;
 
-  constructor(private openAiApiService: OpenAiApiService){}
+  userMessage = '';
+  isLoading = false;
+  chatMessages: ChatMessage[] = [];
+
+  constructor(private openAiApiService: OpenAiApiService) {}
+
+  private extractHtml(payload: string): string {
+    // Strip ```html ... ``` fences if present
+    const m = payload?.match(/^```html\s*([\s\S]*?)\s*```$/i);
+    return m ? m[1] : payload ?? '';
+  }
+
+  private scrollToBottom() {
+    queueMicrotask(() => {
+      const el = this.msgPane?.nativeElement;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+  }
+
+  onEnter(e: Event) {
+  const ke = e as KeyboardEvent;
+  // prevent newline on Enter
+  ke.preventDefault();
+  // Only send on Enter without Shift (safety if template changes later)
+  if (ke.key === 'Enter' && !ke.shiftKey) {
+    this.sendMessage();
+  }
+}
+
 
   sendMessage() {
-    const userMessage = this.userMessage;
-    this.chatMessages.push({ role: 'user', content: userMessage });
-    this.openAiApiService.sendMessage(this.userMessage)
-      .subscribe(response => {
-        this.assistantReply = response.reply;
-        this.chatMessages.push({ role: 'assistant', content: this.assistantReply });
+    const text = this.userMessage.trim();
+    if (!text || this.isLoading) return;
+
+    this.chatMessages.push({ role: 'user', content: text });
+    this.scrollToBottom();
+
+    this.isLoading = true;
+
+    this.openAiApiService.sendMessage(text).subscribe({
+      next: (res) => {
+        const raw = res?.response ?? '';
+        const html = this.extractHtml(raw);
+        this.chatMessages.push({ role: 'assistant', content: html, isHtml: true });
         this.userMessage = '';
-      });
+        this.isLoading = false;
+        this.scrollToBottom();
+      },
+      error: () => {
+        this.chatMessages.push({
+          role: 'assistant',
+          content: 'Sorry—something went wrong. Please try again.'
+        });
+        this.isLoading = false;
+        this.scrollToBottom();
+      }
+    });
   }
 }

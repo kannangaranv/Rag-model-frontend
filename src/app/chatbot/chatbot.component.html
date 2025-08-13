@@ -1,11 +1,57 @@
-<div class="chat-container">
-    <div *ngFor="let message of chatMessages" [ngClass]="message.role">
-      {{ message.content }}
+<div class="chat-wrapper">
+  <!-- Header -->
+  <header class="chat-header">
+    <div class="title">AI Assistant</div>
+  </header>
+
+  <!-- Messages -->
+  <section #msgPane class="messages" role="log" aria-live="polite">
+    <div
+      *ngFor="let m of chatMessages"
+      class="msg-row"
+      [class.right]="m.role === 'user'"
+      [class.left]="m.role === 'assistant'"
+    >
+      <div class="avatar" aria-hidden="true">
+        <span *ngIf="m.role==='assistant'">🤖</span>
+        <span *ngIf="m.role==='user'">🧑</span>
+      </div>
+
+      <div class="bubble" [class.user]="m.role==='user'" [class.assistant]="m.role==='assistant'">
+        <!-- Assistant HTML allowed -->
+        <div *ngIf="m.isHtml; else textTpl" [innerHTML]="m.content"></div>
+        <ng-template #textTpl>{{ m.content }}</ng-template>
+      </div>
     </div>
-  </div>
-  
-  <div class="input-container">
-    <input [(ngModel)]="userMessage" placeholder="Enter your message" />
-    <button (click)="sendMessage()">Send</button>
-  </div>
-  
+
+    <!-- Typing indicator -->
+    <div class="msg-row left" *ngIf="isLoading">
+      <div class="avatar">🤖</div>
+      <div class="bubble assistant">
+        <span class="dots">
+          <span></span><span></span><span></span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Composer -->
+  <footer class="composer">
+    <textarea
+  [(ngModel)]="userMessage"
+  class="input"
+  rows="1"
+  placeholder="Type a message…"
+  (keydown.enter)="onEnter($event)"
+></textarea>
+
+<button
+  class="send-btn"
+  (click)="sendMessage()"
+  [disabled]="isLoading || !userMessage.trim()"
+>
+  Send
+</button>
+
+  </footer>
+</div>
