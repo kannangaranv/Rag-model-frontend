@@ -1,7 +1,7 @@
 <div class="chat-wrapper">
   <!-- Header -->
   <header class="chat-header">
-    <div class="title">AI Assistant</div>
+    <div class="title">AI-Assistant</div>
   </header>
 
   <!-- Messages -->
@@ -13,8 +13,16 @@
       [class.left]="m.role === 'assistant'"
     >
       <div class="avatar" aria-hidden="true">
-        <span *ngIf="m.role==='assistant'">🤖</span>
-        <span *ngIf="m.role==='user'">🧑</span>
+        <img
+          *ngIf="m.role==='assistant'"
+          src="assets/images/assistant.png"
+          class="avatar-img"
+        />
+        <img
+          *ngIf="m.role==='user'"
+          src="assets/images/user.png"
+          class="avatar-img"
+        />
       </div>
 
       <div class="bubble" [class.user]="m.role==='user'" [class.assistant]="m.role==='assistant'">
@@ -26,7 +34,9 @@
 
     <!-- Typing indicator -->
     <div class="msg-row left" *ngIf="isLoading">
-      <div class="avatar">🤖</div>
+      <div class="avatar">
+        <img src="assets/images/assistant.png"  class="avatar-img" />
+      </div>
       <div class="bubble assistant">
         <span class="dots">
           <span></span><span></span><span></span>
@@ -38,20 +48,19 @@
   <!-- Composer -->
   <footer class="composer">
     <textarea
-  [(ngModel)]="userMessage"
-  class="input"
-  rows="1"
-  placeholder="Type a message…"
-  (keydown.enter)="onEnter($event)"
-></textarea>
+      [(ngModel)]="userMessage"
+      class="input"
+      rows="1"
+      placeholder="Type a message…"
+      (keydown.enter)="onEnter($event)"
+    ></textarea>
 
-<button
-  class="send-btn"
-  (click)="sendMessage()"
-  [disabled]="isLoading || !userMessage.trim()"
->
-  Send
-</button>
-
+    <button
+      class="send-btn"
+      (click)="sendMessage()"
+      [disabled]="isLoading || !userMessage.trim()"
+    >
+      Send
+    </button>
   </footer>
 </div>
